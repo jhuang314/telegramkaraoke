@@ -46,8 +46,4 @@ contract KaraokeToken is ERC721, ERC721URIStorage, ERC721Burnable, Ownable {
     {
         return super.supportsInterface(interfaceId);
     }
-
-    function withdraw() public onlyOwner {
-        payable(owner()).transfer(address(this).balance);
-    }
 }
