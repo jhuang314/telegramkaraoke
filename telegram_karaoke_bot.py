@@ -37,7 +37,7 @@ logger = logging.getLogger(__name__)
 transcriber = whisper.load_model('medium.en')
 
 # Maps user id to etherium wallet address
-nft_wallets = {}
+_USER_DATA_WALLET_KEY = 'wallet_addrs'
 
 
 # Define a few command handlers. These usually take the two arguments update and
@@ -62,14 +62,16 @@ async def register_wallet_command(update: Update, context: ContextTypes.DEFAULT_
     logging.info(f"received address: '{addr}'")
 
     if re.match(r"^0x[a-fA-F0-9]{40}$", addr):
-        nft_wallets[update.effective_user.id] = addr
+        if _USER_DATA_WALLET_KEY not in context.user_data:
+            context.user_data[_USER_DATA_WALLET_KEY] = {}
+        context.user_data[_USER_DATA_WALLET_KEY][update.effective_user.id] = addr
         await update.message.reply_text(f"Wallet address registered successfully: {addr}")
     else:
         await update.message.reply_text("Invalid wallet address format. Please use the format 0x...")
 
 async def get_wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /register is issued."""
-    addr = nft_wallets.get(update.effective_user.id)
+    addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
     if addr:
         await update.message.reply_text(f"Wallet address registered: {addr}")
     else:
@@ -82,9 +84,9 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 
 async def get_voice(update: Update, context: CallbackContext) -> None:
-    addr = nft_wallets.get(update.effective_user.id)
+    addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
     if not addr:
-        await update.message.reply_text("No wallets registered yet")
+        await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
         return
 
 
