@@ -21,25 +21,25 @@ s3 = boto3.client('s3',
 	aws_access_key_id=FILEBASE_ACCESS_KEY,
 	aws_secret_access_key=FILEBASE_SECRET_ACCESS_KEY)
 
-font = ImageFont.truetype('FreeMono.ttf', 256)
+font = ImageFont.truetype('FreeMono.ttf', 200)
 TEXT_COLOR=(255, 153, 18)
 
-def generate_nft_image(score, save_to_disk=False):
+def generate_nft_image(score, song_title, save_to_disk=False):
     img = Image.open(BASE_IMAGE)
 
     draw = ImageDraw.Draw(img)
 
     draw.text(
         (212, 512),
-        "Score:",
+        f"{song_title}",
         font=font,
         fill=TEXT_COLOR,
         stroke_width=7,
     )
 
     draw.text(
-        (912, 1212),
-        f"{score}",
+        (212, 1212),
+        f"Score: {score}",
         font=font,
         fill=TEXT_COLOR,
         stroke_width=7,
@@ -56,11 +56,11 @@ def generate_nft_image(score, save_to_disk=False):
 
     return in_mem_file
 
-def create_upload_nft(score, song):
+def create_upload_nft(score, song_id):
     """
     Returns the json metadata CID after uploading image and metadata to Filebase.
     """
-    data = generate_nft_image(score)
+    data = generate_nft_image(score, song_id)
     timestamp = time.strftime("%Y%m%d%H%M%S")
     filename = f'images/nft_{timestamp}.jpg'
 
@@ -74,15 +74,19 @@ def create_upload_nft(score, song):
         'name': 'Karaoke Token NFT',
         'description': 'Telegram Karaoke Game NFT Collection',
         'image': image_url,
+        'type': 'image/jpg',
         'attributes': [
             {
-                'score': score,
+                'trait_type': 'Score',
+                'value': score,
             },
             {
-                'song': song,
+                'trait_type': 'Song',
+                'value': song_id,
             },
             {
-                'timestamp': timestamp,
+                'trait_type': 'Timestamp',
+                'value': timestamp,
             },
         ]
     }
@@ -101,3 +105,4 @@ def create_upload_nft(score, song):
     return json_cid
 
 #create_upload_nft(12345, 'song title')
+#generate_nft_image(123456, 'Silent Night', save_to_disk=True)
