@@ -8,16 +8,23 @@ import os
 
 load_dotenv()
 
-ALCHEMY_API_KEY = os.getenv('ALCHEMY_API_KEY') or ''
-NODE_URL = f"https://eth-sepolia.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
+#ALCHEMY_API_KEY = os.getenv('ALCHEMY_API_KEY') or ''
+#NODE_URL = f"https://eth-sepolia.g.alchemy.com/v2/{ALCHEMY_API_KEY}"
 
-CONTRACT_ADDRESS = "0xA131d02540274992a717C8A3e132b2D6582031eE"
+#CONTRACT_ADDRESS = "0xA131d02540274992a717C8A3e132b2D6582031eE"
 
 CONTRACT_ABI_PATH = "contract.json"
 
 CALLER = os.getenv('CALLER') or ''
 PRIVATE_KEY = os.getenv('PRIVATE_KEY') or ''
 
+# BSC testnet
+#CONTRACT_ADDRESS = "0xCB7b3F767D536b7F884f0342372D8dE6E577a1e2"
+
+
+# opBNB testnet
+CONTRACT_ADDRESS = "0xCB7b3F767D536b7F884f0342372D8dE6E577a1e2"
+NODE_URL = f"https://opbnb-testnet-rpc.bnbchain.org"
 
 def call_contract_mint(to_addr, nft_ipfs):
     w3 = Web3(Web3.HTTPProvider(NODE_URL))
@@ -50,3 +57,5 @@ def call_contract_mint(to_addr, nft_ipfs):
         return tx_receipt
     else:
         print('connection failed')
+
+#call_contract_mint('0x76edf74606cF1b3E2FE7C4670544adE6010C3E56', 'ipfs://QmQGSnjkc3Z7wqsdRt1XMyX5apvYLezbA4GdS9hByfXxEN')
