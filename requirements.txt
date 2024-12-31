@@ -1,0 +1,15 @@
+librosa
+pydub
+openai-whisper
+python-telegram-bot
+scipy
+python-dotenv
+#scipy  --no-binary=scipy
+#scikit-learn --no-binary=scikit-learn
+pillow
+boto3
+web3
+eth-ape
+whisper-normalizer
+jiwer
+prettytable
