@@ -527,7 +527,6 @@ async def get_wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 
 async def show_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /leaderboard is issued."""
-    #scores = context.user_data.get(_USER_DATA_LEADERBOARD_KEY, [])
     scores = _LEADERBOARD
 
     scores = sorted(scores, key=lambda s: s['score'], reverse=True)
@@ -605,13 +604,6 @@ async def score_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) 
 
     await update.message.reply_audio(concatenated_song, caption='Your whole performance')
 
-    # if _USER_DATA_LEADERBOARD_KEY not in context.user_data:
-    #     context.user_data[_USER_DATA_LEADERBOARD_KEY] = []
-    # context.user_data[_USER_DATA_LEADERBOARD_KEY].append({
-    #     'score': score,
-    #     'song_id': game_info['song_id'],
-    #     'username': update.message.from_user.first_name,
-    # })
 
     _LEADERBOARD.append({
         'score': score,
@@ -643,42 +635,6 @@ async def score_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) 
             parse_mode=ParseMode.MARKDOWN_V2,
         )
 
-# async def get_voice(update: Update, context: CallbackContext) -> None:
-#     addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
-#     if not addr:
-#         await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
-#         return
-
-
-#     logging.info(f"Received voice message: {update.message.voice.file_id}")
-#     voice = update.message.voice
-#     voice_file = await context.bot.get_file(voice.file_id)
-
-#     f = await voice_file.download_to_drive('voice.ogg')
-
-
-#     results = transcriber.transcribe('voice.ogg')
-#     logging.info(f"transcription results: {results}")
-
-#     await update.message.reply_text(f"nice voice! I think you said: {results['text']}")
-
-#     if _SKIP_NFT:
-#         logging.info(f"skipping generating nft image and metadata")
-#         return
-
-#     logging.info(f"generating nft image and metadata")
-#     json_cid = create_upload_nft(results['text'], 'test song')
-
-#     logging.info(f"minting nft for {json_cid}")
-#     receipt = call_contract_mint(addr, f"ipfs://{json_cid}")
-
-#     if receipt:
-#         txn_hash = receipt['transactionHash'].to_0x_hex()
-#         logging.info(f"minting nft receipt tx: {txn_hash}")
-#         await update.message.reply_text(
-#             f"minted nft for you: [{txn_hash}](https://sepolia.etherscan.io/tx/{txn_hash})",
-#             parse_mode=ParseMode.MARKDOWN_V2,
-#         )
 
 
 def main() -> None:
@@ -687,7 +643,6 @@ def main() -> None:
     application = Application.builder().token(TELEGRAM_TOKEN).build()
 
     # on different commands - answer in Telegram
-    #application.add_handler(CommandHandler("start", start))
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("register", register_wallet_command))
     application.add_handler(CommandHandler("current_wallet", get_wallet_command))
@@ -704,14 +659,6 @@ def main() -> None:
     )
     application.add_handler(karaoke_handler)
 
-
-    # on non command i.e message - echo the message on Telegram
-    #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-
-    # Add handler for voice messages
-    # application.add_handler(MessageHandler(filters.VOICE, get_voice))
-
-    # application.add_handler(CallbackQueryHandler(button_selection_handler, pattern='^button_'))
 
     # Run the bot until the user presses Ctrl-C
     application.run_polling(allowed_updates=Update.ALL_TYPES)
