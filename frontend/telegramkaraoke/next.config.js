@@ -9,6 +9,7 @@ const nextConfig = {
     "rc-picker",
     "rc-input",
   ],
+  output: "standalone",
 };
 
 module.exports = nextConfig;
