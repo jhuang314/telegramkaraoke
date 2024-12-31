@@ -12,6 +12,7 @@ import os
 import re
 
 from dotenv import load_dotenv
+import prettytable as pt
 import whisper
 
 from telegram import ForceReply, Update, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
@@ -20,7 +21,7 @@ from telegram.constants import ParseMode
 
 from contract_interaction import call_contract_mint
 from generate_nft import create_upload_nft
-from process_audio import concatenate_audio
+from process_audio import concatenate_audio, compare_audios
 
 load_dotenv()
 
@@ -35,7 +36,7 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
-transcriber = whisper.load_model('medium.en')
+#transcriber = whisper.load_model('medium.en')
 
 # user_data structure
 # {
@@ -48,30 +49,91 @@ transcriber = whisper.load_model('medium.en')
 #       score: number
 #     }
 #   }
+#   leaderboard: [
+#     {
+#       score: number,
+#       song_id: str,
+#       username: (username) str,
+#     }
+#   ]
 # }
 
-# Maps user id to etherium wallet address
+
 _USER_DATA_WALLET_KEY = 'wallet_addrs'
 _USER_DATA_GAME_KEY = 'games'
+_USER_DATA_LEADERBOARD_KEY = 'leaderboard'
+
+_LEADERBOARD = []
 
 # Disable minting nfts (to save test coins)
-_SKIP_NFT = True
+_SKIP_NFT = False
+
+#TXN_SCAN_URL = 'https://sepolia.etherscan.io/tx/'
+TXN_SCAN_URL = 'https://opbnb-testnet.bscscan.com/tx/'
 
 SONG_SELECTION, LYRICS, SCORE = range(3)
 
 SONG_1 = [
     {
-        'lyrics': 'Happy Birthday to you',
+        'lyrics': 'Joy to the world, the Lord has come',
     },
     {
-        'lyrics': 'Happy Birthday to you',
+        'lyrics': 'Let earth receive her King',
     },
     {
-        'lyrics': 'Happy Birthday Dear Bob',
+        'lyrics': 'Let every heart prepare Him room',
     },
     {
-        'lyrics': 'Happy Birthday to you',
-    }
+        'lyrics': 'And heaven and nature sing, and heaven and nature sing',
+    },
+    {
+        'lyrics': 'And heaven, and heaven and nature sing',
+    },
+    {
+        'lyrics': 'Joy to the earth, the Savior reigns',
+    },
+    {
+        'lyrics': 'Let men their songs employ',
+    },
+    {
+        'lyrics': 'While fields and floods, rocks, hills, and plains',
+    },
+    {
+        'lyrics': 'Repeat the sounding joy, repeat the sounding joy',
+    },
+    {
+        'lyrics': 'Repeat, repeat the sounding joy',
+    },
+    {
+        'lyrics': 'No more let sins and sorrows grow',
+    },
+    {
+        'lyrics': 'Nor thorns infest the ground',
+    },
+    {
+        'lyrics': 'He comes to make His blessings flow',
+    },
+    {
+        'lyrics': 'Far as the curse is found, far as the curse is found',
+    },
+    {
+        'lyrics': 'Far as, far as the curse is found',
+    },
+    {
+        'lyrics': 'He rules the world with truth and grace',
+    },
+    {
+        'lyrics': 'And makes the nations prove',
+    },
+    {
+        'lyrics': 'The glories of His righteousness',
+    },
+    {
+        'lyrics': 'And wonders of His love, and wonders of His love',
+    },
+    {
+        'lyrics': 'And wonders, wonders of His love',
+    },
 ]
 
 SONG_2 = [
@@ -95,9 +157,263 @@ SONG_2 = [
     },
 ]
 
+SONG_3 = [
+    {
+        'lyrics': 'Dashing through the snow',
+    },
+    {
+        'lyrics': 'In a one-horse open sleigh',
+    },
+    {
+        'lyrics': 'All the fields we go',
+    },
+    {
+        'lyrics': 'Laughing all the way',
+    },
+    {
+        'lyrics': 'Bells on bobtails ring',
+    },
+    {
+        'lyrics': 'Making spirits bright',
+    },
+    {
+        'lyrics': 'What fun it is to ride and sing',
+    },
+    {
+        'lyrics': 'A sleighing song tonight',
+    },
+    {
+        'lyrics': 'Oh! Jingle bells, jingle bells',
+    },
+    {
+        'lyrics': 'Jingle all the way',
+    },
+    {
+        'lyrics': 'Oh, what fun it is to ride',
+    },
+    {
+        'lyrics': 'In a one-horse open sleigh, hey',
+    },
+    {
+        'lyrics': 'Jingle bells, jingle bells',
+    },
+    {
+        'lyrics': 'Jingle all the way',
+    },
+    {
+        'lyrics': 'Oh, what fun it is to ride',
+    },
+    {
+        'lyrics': 'In a one-horse open sleigh',
+    },
+]
+
+SONG_4 = [
+    {
+        'lyrics': 'Jingle bells, jingle bells',
+    },
+    {
+        'lyrics': 'Jingle all the way',
+    },
+    {
+        'lyrics': 'Oh, what fun it is to ride',
+    },
+    {
+        'lyrics': 'In a one-horse open sleigh, hey',
+    },
+    {
+        'lyrics': 'Jingle bells, jingle bells',
+    },
+    {
+        'lyrics': 'Jingle all the way',
+    },
+    {
+        'lyrics': 'Oh, what fun it is to ride',
+    },
+    {
+        'lyrics': 'In a one-horse open sleigh',
+    },
+]
+
+SONG_5 = [
+    {
+        'lyrics': 'You are my fire',
+    },
+    {
+        'lyrics': 'The one desire',
+    },
+    {
+        'lyrics': 'Believe when I say',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': 'But we are two worlds apart',
+    },
+    {
+        'lyrics': 'Can\'t reach to your heart',
+    },
+    {
+        'lyrics': 'When you say',
+    },
+    {
+        'lyrics': 'That I want it that way',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a heartache',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a mistake',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'I never wanna hear you say',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': 'Am I your fire',
+    },
+    {
+        'lyrics': 'Your one desire',
+    },
+    {
+        'lyrics': 'Yes I know it\'s too late',
+    },
+    {
+        'lyrics': 'But I want it that way',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a heartache',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a mistake',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'I never wanna hear you say',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': 'Now I can see that we\'re falling apart',
+    },
+    {
+        'lyrics': 'From the way that it used to be, yeah',
+    },
+    {
+        'lyrics': 'No matter the distance',
+    },
+    {
+        'lyrics': 'I want you to know',
+    },
+    {
+        'lyrics': 'That deep down inside of me',
+    },
+    {
+        'lyrics': 'You are my fire',
+    },
+    {
+        'lyrics': 'The one desire',
+    },
+    {
+        'lyrics': 'You are',
+    },
+    {
+        'lyrics': 'You are, you are, you are',
+    },
+    {
+        'lyrics': 'Don\'t wanna hear you say',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a heartache',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a mistake (don\'t wanna hear you say)',
+    },
+    {
+        'lyrics': 'I never wanna hear you say (oh, yeah)',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a heartache',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a mistake',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'I never wanna hear you say (don\'t wanna hear you say)',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a heartache',
+    },
+    {
+        'lyrics': 'Ain\'t nothing but a mistake',
+    },
+    {
+        'lyrics': 'Tell me why',
+    },
+    {
+        'lyrics': 'I never wanna hear you say (never wanna hear you say)',
+    },
+    {
+        'lyrics': 'I want it that way',
+    },
+    {
+        'lyrics': '\'Cause I want it that way',
+    },
+]
+
 SONGS = {
-    'Happy Birthday': SONG_1,
+    'Joy to the world': SONG_1,
     'Silent Night': SONG_2,
+    'Jingle Bells': SONG_3,
+    'Jingle Bells (chorus)': SONG_4,
+    'I want it that way': SONG_5,
+}
+
+SONG_REFERENCES = {
+    'Joy to the world': 'data/mp3/joytotheworld.mp3',
+    'Silent Night': 'data/mp3/silentnight.mp3',
+    'Jingle Bells': 'data/mp3/jinglebells.mp3',
+    'Jingle Bells (chorus)': 'data/mp3/jinglebellschorus.mp3',
+    'I want it that way': 'data/mp3/iwantitthatway.mp3',
 }
 
 
@@ -106,18 +422,22 @@ SONGS = {
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
 
+    addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
+    if not addr:
+        logging.info(f"user wallet not yet registered")
+        await update.message.reply_text("Time to connect your wallet! Use '/register 0x...' to begin your karaoke journey")
+        return
+
     keyboard = [
-        [InlineKeyboardButton("Happy Birthday", callback_data='button_Happy Birthday')],
+        [InlineKeyboardButton("Jingle Bells (chorus)", callback_data='button_Jingle Bells (chorus)')],
+        [InlineKeyboardButton("Jingle Bells", callback_data='button_Jingle Bells')],
+        [InlineKeyboardButton("Joy to the world", callback_data='button_Joy to the world')],
         [InlineKeyboardButton("Silent Night", callback_data='button_Silent Night')],
+        [InlineKeyboardButton("I want it that way", callback_data='button_I want it that way')],
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
-    await update.message.reply_text('Please pick a song:', reply_markup=reply_markup)
+    await update.message.reply_text('Pick a tune that makes your soul sing!', reply_markup=reply_markup)
 
-    # user = update.effective_user
-    # await update.message.reply_html(
-    #     rf"Hi {user.mention_html()}!",
-    #     reply_markup=ForceReply(selective=True),
-    # )
     return SONG_SELECTION
 
 async def song_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
@@ -144,21 +464,43 @@ async def song_selection(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         'score': 0,
     }
 
-    # await update.message.reply_text(
-    #     f"Great choice! Here are your lyrics:\n{selected_song}",
-    #     reply_markup=ReplyKeyboardRemove(),
-    # )
-
     return LYRICS
 
-# async def button_selection_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-#     query = update.callback_query
-#     await query.answer()
-#     await query.edit_message_text(f'You selected option: {query.data.split("_")[1]}')
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /help is issued."""
-    await update.message.reply_text("Help!")
+    await update.message.reply_text(
+        """
+    🎤 Welcome to the Telegram Karaoke Bot Game\! 🎤
+
+    Get ready to unleash your inner diva \(or dude\!\) with this electrifying bot\!
+
+    Here's how to play:
+
+    1\. ✨ Level Up\! ✨ Use '/register' to receive your FREE performance NFT and get ready to shine\!
+    2\. Let the Music Play\! Start the fun with '/start' to begin the game\.
+    3\. Choose Your Tunes\! Select a song from our awesome library\.
+    4\. Showtime\! When the lyric appears, record your most fabulous voice message\.
+    5\. 🌟 Rock the Scoreboard\! 🌟 Earn a score and unlock exclusive NFTs to show off your vocal prowess\!
+    6\. Checkout the leaderboard\! Use '/leaderboard' to see the highscores\.
+    7\. Cancel anytime\! Use '/cancel' to abort the current game\.
+
+    Scoring:
+
+    We aim for perfection \(100,000 points\!\), but we're all human, right? We deduct points for:
+
+    🎤 Lyrical Slip\-ups: Those pesky missed words can really throw off the rhythm\!
+    🎵 Pitch Imperfections: A little off\-key? No worries\! We'll try to be understanding \(mostly\)\.
+    🎶 Rhythm Rumble: Can you keep the beat? Let's see if you can stay on track\!
+
+    Get ready to sing your heart out and become a karaoke legend\!
+
+    Telegram Karaoke NFT Site
+
+    Visit https://dub.sh/tgkaraokesite to see the global list of Karaoke Performance NFTs\!
+        """,
+        parse_mode=ParseMode.MARKDOWN_V2,
+    )
 
 async def register_wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /register is issued."""
@@ -170,18 +512,35 @@ async def register_wallet_command(update: Update, context: ContextTypes.DEFAULT_
         if _USER_DATA_WALLET_KEY not in context.user_data:
             context.user_data[_USER_DATA_WALLET_KEY] = {}
         context.user_data[_USER_DATA_WALLET_KEY][update.effective_user.id] = addr
-        await update.message.reply_text(f"Wallet address registered successfully: {addr}")
+        await update.message.reply_text(f"Your wallet '{addr}' is now linked! Let the karaoke fun begin!")
     else:
         await update.message.reply_text("Invalid wallet address format. Please use the format 0x...")
 
 async def get_wallet_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Send a message when the command /register is issued."""
+    """Send a message when the command /current_wallet is issued."""
     addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
     if addr:
         await update.message.reply_text(f"Wallet address registered: {addr}")
     else:
         await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
 
+
+async def show_leaderboard(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Send a message when the command /leaderboard is issued."""
+    #scores = context.user_data.get(_USER_DATA_LEADERBOARD_KEY, [])
+    scores = _LEADERBOARD
+
+    scores = sorted(scores, key=lambda s: s['score'], reverse=True)
+
+    table = pt.PrettyTable(['Score', 'Song', 'Player'])
+    table.align['Score'] = 'l'
+    table.align['Song'] = 'r'
+    table.align['Player'] = 'r'
+
+    for score in scores:
+        table.add_row([f"{score['score']:06}", score['song_id'], score['username']])
+
+    await update.message.reply_text(f'<pre>{table}</pre>', parse_mode=ParseMode.HTML)
 
 async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Echo the user message."""
@@ -228,47 +587,50 @@ async def process_lyrics(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     return LYRICS
 
-async def score_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+async def score_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Scores the whole performance."""
-    await update.message.reply_text(f"Nice performance! Scoring...")
+    await update.message.reply_text(f"You rocked it! Scoring your performance now...")
 
     user_id = update.effective_user.id
     game_info = context.user_data[_USER_DATA_GAME_KEY][user_id]
 
     # concatenate all audio files together
-    concatenate_audio(game_info['recordings'])
-
+    logging.info(f"concatenate song lines")
+    concatenated_song, concatenated_filename = concatenate_audio(game_info['recordings'])
+    logging.info(f"concat done")
 
     # score the performance
+    score = compare_audios(SONG_REFERENCES[game_info['song_id']], concatenated_filename)
+    await update.message.reply_text(f"Your Score: {score}")
+
+    await update.message.reply_audio(concatenated_song, caption='Your whole performance')
+
+    # if _USER_DATA_LEADERBOARD_KEY not in context.user_data:
+    #     context.user_data[_USER_DATA_LEADERBOARD_KEY] = []
+    # context.user_data[_USER_DATA_LEADERBOARD_KEY].append({
+    #     'score': score,
+    #     'song_id': game_info['song_id'],
+    #     'username': update.message.from_user.first_name,
+    # })
+
+    _LEADERBOARD.append({
+        'score': score,
+        'song_id': game_info['song_id'],
+        'username': update.message.from_user.first_name,
+    })
 
     # mint the nft
-
-
-async def get_voice(update: Update, context: CallbackContext) -> None:
-    addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
-    if not addr:
-        await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
-        return
-
-
-    logging.info(f"Received voice message: {update.message.voice.file_id}")
-    voice = update.message.voice
-    voice_file = await context.bot.get_file(voice.file_id)
-
-    f = await voice_file.download_to_drive('voice.ogg')
-
-
-    results = transcriber.transcribe('voice.ogg')
-    logging.info(f"transcription results: {results}")
-
-    await update.message.reply_text(f"nice voice! I think you said: {results['text']}")
-
     if _SKIP_NFT:
         logging.info(f"skipping generating nft image and metadata")
         return
 
+    addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
+    if not addr:
+        logging.info(f"user wallet not yet registered")
+        await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
+
     logging.info(f"generating nft image and metadata")
-    json_cid = create_upload_nft(results['text'], 'test song')
+    json_cid = create_upload_nft(score, game_info['song_id'])
 
     logging.info(f"minting nft for {json_cid}")
     receipt = call_contract_mint(addr, f"ipfs://{json_cid}")
@@ -277,9 +639,46 @@ async def get_voice(update: Update, context: CallbackContext) -> None:
         txn_hash = receipt['transactionHash'].to_0x_hex()
         logging.info(f"minting nft receipt tx: {txn_hash}")
         await update.message.reply_text(
-            f"minted nft for you: [{txn_hash}](https://sepolia.etherscan.io/tx/{txn_hash})",
+            f"You just earned a shiny NFT\! Check it out here: [{txn_hash}]({TXN_SCAN_URL}{txn_hash})",
             parse_mode=ParseMode.MARKDOWN_V2,
         )
+
+# async def get_voice(update: Update, context: CallbackContext) -> None:
+#     addr = context.user_data.get(_USER_DATA_WALLET_KEY, {}).get(update.effective_user.id)
+#     if not addr:
+#         await update.message.reply_text("No wallets registered yet. Please use command: /register 0x...")
+#         return
+
+
+#     logging.info(f"Received voice message: {update.message.voice.file_id}")
+#     voice = update.message.voice
+#     voice_file = await context.bot.get_file(voice.file_id)
+
+#     f = await voice_file.download_to_drive('voice.ogg')
+
+
+#     results = transcriber.transcribe('voice.ogg')
+#     logging.info(f"transcription results: {results}")
+
+#     await update.message.reply_text(f"nice voice! I think you said: {results['text']}")
+
+#     if _SKIP_NFT:
+#         logging.info(f"skipping generating nft image and metadata")
+#         return
+
+#     logging.info(f"generating nft image and metadata")
+#     json_cid = create_upload_nft(results['text'], 'test song')
+
+#     logging.info(f"minting nft for {json_cid}")
+#     receipt = call_contract_mint(addr, f"ipfs://{json_cid}")
+
+#     if receipt:
+#         txn_hash = receipt['transactionHash'].to_0x_hex()
+#         logging.info(f"minting nft receipt tx: {txn_hash}")
+#         await update.message.reply_text(
+#             f"minted nft for you: [{txn_hash}](https://sepolia.etherscan.io/tx/{txn_hash})",
+#             parse_mode=ParseMode.MARKDOWN_V2,
+#         )
 
 
 def main() -> None:
@@ -292,6 +691,7 @@ def main() -> None:
     application.add_handler(CommandHandler("help", help_command))
     application.add_handler(CommandHandler("register", register_wallet_command))
     application.add_handler(CommandHandler("current_wallet", get_wallet_command))
+    application.add_handler(CommandHandler("leaderboard", show_leaderboard))
 
     # Karaoke game state handlers
     karaoke_handler = ConversationHandler(
@@ -306,10 +706,10 @@ def main() -> None:
 
 
     # on non command i.e message - echo the message on Telegram
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    #application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
 
     # Add handler for voice messages
-    application.add_handler(MessageHandler(filters.VOICE, get_voice))
+    # application.add_handler(MessageHandler(filters.VOICE, get_voice))
 
     # application.add_handler(CallbackQueryHandler(button_selection_handler, pattern='^button_'))
 
