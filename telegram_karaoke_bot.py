@@ -497,7 +497,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> No
 
     Telegram Karaoke NFT Site
 
-    Visit https://dub.sh/tgkaraokesite to see the global list of Karaoke Performance NFTs\!
+    Visit [https://dub\.sh/tgkaraokesite](https://dub.sh/tgkaraokesite) to see the global list of Karaoke Performance NFTs\!
         """,
         parse_mode=ParseMode.MARKDOWN_V2,
     )
