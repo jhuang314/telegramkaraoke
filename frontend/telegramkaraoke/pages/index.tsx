@@ -17,6 +17,7 @@ import {
   OkxWallet,
   TokenPocket,
   WagmiWeb3ConfigProvider,
+  WalletConnect,
   Sepolia,
 } from "@ant-design/web3-wagmi";
 import { abi } from "../contract";
@@ -29,7 +30,7 @@ import {
   useReadContracts,
 } from "wagmi";
 import { QueryClient } from "@tanstack/react-query";
-import { injected } from "wagmi/connectors";
+import { injected, walletConnect } from "wagmi/connectors";
 
 import { Button, Flex, Modal, Spin, Switch } from "antd";
 
@@ -42,6 +43,12 @@ const config = createConfig({
   transports: {
     [opBNBTestnet.id]: http(),
   },
+  connectors: [
+    walletConnect({
+      projectId: "34da132a2121bd794c24d11fb06ef725",
+      showQrModal: false,
+    }),
+  ],
 });
 
 const queryClient = new QueryClient();
@@ -74,6 +81,7 @@ export default function Home() {
           ens
           wallets={[
             MetaMask(),
+            WalletConnect(),
             TokenPocket({
               group: "Popular",
             }),
