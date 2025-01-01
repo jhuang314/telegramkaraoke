@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 import json
 import io
 import os
+import textwrap
 import time
 
 load_dotenv()
@@ -24,21 +25,36 @@ s3 = boto3.client('s3',
 font = ImageFont.truetype('FreeMono.ttf', 200)
 TEXT_COLOR=(255, 153, 18)
 
+
+IMG_MAP = {
+    'Joy to the world': 'joytotheworld.jpg',
+    'Silent Night': 'silentnight.jpg',
+    'Jingle Bells': 'jinglebells.jpg',
+    'Jingle Bells (chorus)': 'jinglebells.jpg',
+    'I want it that way': 'iwantitthatway.jpg',
+}
+
+
 def generate_nft_image(score, song_title, save_to_disk=False):
-    img = Image.open(BASE_IMAGE)
+    base_image = IMG_MAP.get(song_title, BASE_IMAGE)
+    img = Image.open(base_image)
 
     draw = ImageDraw.Draw(img)
 
-    draw.text(
-        (212, 512),
-        f"{song_title}",
-        font=font,
-        fill=TEXT_COLOR,
-        stroke_width=7,
-    )
+    # text wrap the image so title can overflow
+    offset = 212
+    for line in textwrap.wrap(song_title, width=13):
+        draw.text((212, offset), line, font=font, fill=TEXT_COLOR, stroke_width=7)
+
+        left, top, right, bottom = font.getbbox(line)
+        width = right - left
+        height = bottom - top
+
+        offset += height + 100
+
 
     draw.text(
-        (212, 1212),
+        (212, 1812),
         f"Score: {score}",
         font=font,
         fill=TEXT_COLOR,
@@ -105,4 +121,4 @@ def create_upload_nft(score, song_id):
     return json_cid
 
 #create_upload_nft(12345, 'song title')
-#generate_nft_image(123456, 'Silent Night', save_to_disk=True)
+#generate_nft_image(123456, 'I want it that way', save_to_disk=True)
