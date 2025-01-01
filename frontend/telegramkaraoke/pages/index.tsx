@@ -121,7 +121,7 @@ export default function Home() {
               onCancel={() => setOpen(false)}
             >
               <h2>Start conversation with the bot:</h2>
-              <img src="https://cdn.discordapp.com/attachments/807630293917761607/1323713788385558538/Screenshot_2024-12-31_130101-removebg-preview.png?ex=67758408&is=67743288&hm=1c8f76db9714ce1de8881dd8612e508b95a121ce247ae60c9b7e273fdc86cfbe&"></img>
+              <img src="/qr.png"></img>
               <h2>Use the /help command to start!</h2>
             </Modal>
           </Flex>

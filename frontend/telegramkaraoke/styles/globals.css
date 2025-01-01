@@ -97,7 +97,7 @@ body {
             rgb(var(--background-end-rgb))
         )
         rgb(var(--background-start-rgb));
-    background-image: url("https://cdn.discordapp.com/attachments/807630293917761607/1323742229021331496/9959299.jpg?ex=67759e85&is=67744d05&hm=42b9b6bc717ac9b27d9f5237cf1378f18271e2acb1b348ed01206e8682b55cf5&");
+    background-image: url("/9959299.jpg");
 }
 
 a {
