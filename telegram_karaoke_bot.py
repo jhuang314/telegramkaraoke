@@ -631,7 +631,12 @@ async def score_performance(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         txn_hash = receipt['transactionHash'].to_0x_hex()
         logging.info(f"minting nft receipt tx: {txn_hash}")
         await update.message.reply_text(
-            f"You just earned a shiny NFT\! Check it out here: [{txn_hash}]({TXN_SCAN_URL}{txn_hash})",
+            f"""You just earned a shiny NFT\! Check it out here:
+
+[https://dub\.sh/tgkaraokesite](https://dub.sh/tgkaraokesite)
+
+[Txn: {txn_hash}]({TXN_SCAN_URL}{txn_hash})
+        """,
             parse_mode=ParseMode.MARKDOWN_V2,
         )
 
