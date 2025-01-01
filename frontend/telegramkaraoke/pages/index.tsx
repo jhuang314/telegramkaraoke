@@ -149,7 +149,7 @@ function Content({ filterOwned }: { filterOwned: boolean }) {
       abi: abi,
       address: contractAddress,
       functionName: "ownerOf",
-      args: [index],
+      args: [index + 1],
     }),
   );
 
