@@ -88,7 +88,7 @@ export default function Home() {
             align="center"
             className={styles.header}
           >
-            <h1>Telegram Karaoke</h1>
+            <h1 className={styles.h1}>Telegram Karaoke</h1>
 
             <Flex gap="small" align="center">
               <FilterToggle toggleFilter={toggleFilter} filter={filterOwned} />

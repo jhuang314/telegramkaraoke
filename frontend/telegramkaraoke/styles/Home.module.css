@@ -16,6 +16,10 @@
     padding-top: 2rem;
 }
 
+.h1 {
+    color: white;
+}
+
 /* Tablet and Smaller Desktop */
 @media (min-width: 701px) and (max-width: 1120px) {
     .grid {
